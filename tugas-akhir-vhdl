@@ -1,0 +1,100 @@
+entity program is
+    Port ( clock : in  STD_LOGIC;
+           reset : in  STD_LOGIC;
+           sensor : in  STD_LOGIC_VECTOR (11 downto 0);
+           gate : out  STD_LOGIC_VECTOR (7 downto 0);
+           led : out  STD_LOGIC;
+           buzzer : out  STD_LOGIC);
+end program;
+
+architecture Behavioral of program is
+	type checkpoint is (s0, s1, s2, s3, s4);
+	signal state_reg, state_next: checkpoint;
+begin
+	--D-FlipFlop
+	d_flipflop: process(clock,reset)
+	begin
+		if (reset='1') then
+			state_reg <= s0;
+		elsif (clock'event and clock='1') then
+			state_reg <= state_next;
+		end if;
+	end process;
+	
+	--Next state logic
+	next_state_proc: process(state_reg, state_next, sensor(0), sensor(1), sensor(2), sensor(3), sensor(4), sensor(5), sensor(6), sensor(7), sensor(8), sensor(9), sensor(10), sensor(11))
+	begin
+		case state_reg is
+			when s0 =>
+				if ((sensor(0) or sensor(1) or sensor(2)) = '1') then
+					state_next <= s1;
+				else
+					state_next <= s0;
+				end if;
+			when s1 =>
+				if ((sensor(3) or sensor(4) or sensor(5)) = '1') then
+					state_next <= s2;
+				elsif ((sensor(0) or sensor(1) or sensor(2)) = '0') then
+					state_next <= s0;
+				else
+					state_next <= s1;
+				end if;
+			when s2 =>
+				if ((sensor(6) or sensor(7) or sensor(8)) = '1') then
+					state_next <= s3;
+				elsif ((sensor(3) or sensor(4) or sensor(5)) = '0') then
+					state_next <= s1;
+				else
+					state_next <= s2;
+				end if;
+			when s3 =>
+				if ((sensor(9) or sensor(10) or sensor(11)) = '1') then
+					state_next <= s4;
+				elsif ((sensor(6) or sensor(7) or sensor(8)) = '0') then
+					state_next <= s2;
+				else
+					state_next <= s3;
+				end if;
+			when s4 =>
+				if ((sensor(9) or sensor(10) or sensor(11)) = '0') then
+					state_next <= s3;
+				else
+					state_next <= s4;
+				end if;
+		end case;
+	end process;
+	
+	output_proc: process(state_reg, sensor)
+	begin
+		case state_reg is
+			when s0 =>
+				buzzer<='0';
+				led<='0';
+				gate<="00000011";
+			when s1 =>
+				buzzer<='1';
+				led<='1';
+				--gate(0)<='1';
+				--gate(1)<='1';
+				gate<="00001111";
+			when s2 =>
+				buzzer<='1';
+				led<='1';
+				--gate(2)<='1';
+				--gate(3)<='1';
+				gate<="00111111";
+			when s3 =>
+				buzzer<='1';
+				led<='1';
+				--gate(4)<='1';
+				--gate(5)<='1';
+				gate<="11111111";
+			when s4 =>
+				buzzer<='1';
+				led<='1';
+				--gate(4)<='1';
+				--gate(5)<='1';
+				gate<="11111111";
+		end case;
+	end process;
+end Behavioral;
